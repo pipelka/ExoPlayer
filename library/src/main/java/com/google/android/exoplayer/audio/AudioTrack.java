@@ -218,6 +218,7 @@ public final class AudioTrack {
   private long resumeSystemTimeUs;
   private long latencyUs;
   private float volume;
+  private long discontinuityDiffUs;
 
   private byte[] temporaryBuffer;
   private int temporaryBufferOffset;
@@ -237,8 +238,21 @@ public final class AudioTrack {
    * @param streamType The type of audio stream for the underlying {@link android.media.AudioTrack}.
    */
   public AudioTrack(AudioCapabilities audioCapabilities, int streamType) {
+    this(audioCapabilities, streamType, 200000);
+  }
+
+  /**
+   * Creates an audio track using the specified audio capabilities and stream type.
+   *
+   * @param audioCapabilities The current audio playback capabilities.
+   * @param streamType The type of audio stream for the underlying {@link android.media.AudioTrack}.
+   * @param discontinuityDiffUs The maximum playback difference of played samples. Differences greater
+   *     than this will cause a discontinuity and reset the playback position.
+   */
+  public AudioTrack(AudioCapabilities audioCapabilities, int streamType, long discontinuityDiffUs) {
     this.audioCapabilities = audioCapabilities;
     this.streamType = streamType;
+    this.discontinuityDiffUs = discontinuityDiffUs;
     releasingConditionVariable = new ConditionVariable(true);
     if (Util.SDK_INT >= 18) {
       try {
@@ -573,7 +587,7 @@ public final class AudioTrack {
         // Sanity check that bufferStartTime is consistent with the expected value.
         long expectedBufferStartTime = startMediaTimeUs + framesToDurationUs(getSubmittedFrames());
         if (startMediaTimeState == START_IN_SYNC
-            && Math.abs(expectedBufferStartTime - bufferStartTime) > 200000) {
+            && Math.abs(expectedBufferStartTime - bufferStartTime) > discontinuityDiffUs) {
           Log.e(TAG, "Discontinuity detected [expected " + expectedBufferStartTime + ", got "
               + bufferStartTime + "]");
           startMediaTimeState = START_NEED_SYNC;
