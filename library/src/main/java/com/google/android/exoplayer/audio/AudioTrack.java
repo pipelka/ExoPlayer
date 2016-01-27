@@ -591,7 +591,7 @@ public final class AudioTrack {
         // Sanity check that bufferStartTime is consistent with the expected value.
         long expectedBufferStartTime = startMediaTimeUs + framesToDurationUs(getSubmittedFrames());
         if (startMediaTimeState == START_IN_SYNC
-            && Math.abs(expectedBufferStartTime - bufferStartTime) > 200000) {
+            && Math.abs(expectedBufferStartTime - bufferStartTime) > 10000) {
           Log.e(TAG, "Discontinuity detected [expected " + expectedBufferStartTime + ", got "
               + bufferStartTime + "]");
           startMediaTimeState = START_NEED_SYNC;
